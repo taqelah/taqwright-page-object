@@ -16,6 +16,7 @@ npm-debug.log*
 
 # Generated test reports / artifacts
 test-results/
+playwright-report/
 taqwright-report/
 report.html
 fail-*.png
