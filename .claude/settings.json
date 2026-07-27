@@ -1,0 +1,45 @@
+{
+  "$comment": "Project settings — checked into git, shared with the team. Controls what Claude may do without asking. Personal overrides go in .claude/settings.local.json (gitignored).",
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run test:*)",
+      "Bash(npx taqwright test --list)",
+      "Bash(npx taqwright devices)",
+      "Bash(npx taqwright doctor)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(adb devices)",
+      "Bash(xcrun simctl list:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git fetch:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git rebase:*)",
+      "Bash(git merge:*)",
+      "Bash(npm publish:*)",
+      "Bash(adb uninstall:*)",
+      "Bash(adb install:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean:*)",
+      "Bash(rm -rf:*)",
+      "Read(./**/.env)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./**/*secret*)"
+    ]
+  }
+}

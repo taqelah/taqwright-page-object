@@ -24,5 +24,8 @@ fail-*.png
 # Secrets / local env (keep .env.example, ignore real .env)
 .env
 
+# Claude Code — share .claude/, keep personal overrides local
+.claude/settings.local.json
+
 # OS / editor
 .DS_Store

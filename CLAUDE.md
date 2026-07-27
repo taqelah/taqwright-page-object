@@ -1,6 +1,8 @@
 # CLAUDE.md — taqelah-demo-app-page-object
 
 > Claude Code loads this file at the start of every session. Keep it short and current.
+> Detailed rules live in **`.claude/rules/`**; the per-layer files there are scoped to the code they
+> apply to.
 
 ## What this is
 
@@ -34,8 +36,20 @@ returns the **next** page object, so the spec chains screen-to-screen. One spec
 ## Commands
 
 ```bash
-nvm use 24 && npm install
-npm run test:android        # same spec, Android page object
+nvm use 24 && npm install   # taqwright needs node >= 24
+npm run typecheck           # tsc --noEmit — run before every commit
+npx taqwright test --list   # one spec under [android] and [ios] — no device needed
+npm run test:android        # same spec, Android page object (emulator booted)
 npm run test:ios            # same spec, iOS page object (macOS)
-npx taqwright test --list   # one spec under [android] and [ios]
 ```
+
+## Rule files (`.claude/rules/`)
+
+- `architecture.md` — layer model, the hard cross-cutting rules, adding a screen (always loaded).
+- `page-objects.md` — base/subclass split, fluent navigation, factories (scoped to `pages/`).
+- `locators.md` — per-platform locator strategy, codegen provenance (scoped to `Android*`/`Ios*`).
+- `writing-tests.md` — spec pattern + checklist (scoped to `tests/`).
+- `build-run-git.md` — node version, commands, config gotchas, style & git (always loaded).
+
+`.claude/settings.json` holds shared permissions; put personal overrides in
+`.claude/settings.local.json` (gitignored).
