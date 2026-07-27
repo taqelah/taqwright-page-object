@@ -1,0 +1,20 @@
+{
+  "name": "taqelah-demo-app-page-object",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Page Object pattern: one spec, both Android & iOS via base + child page classes",
+  "type": "module",
+  "scripts": {
+    "test": "taqwright test",
+    "test:android": "taqwright test --project android",
+    "test:ios": "taqwright test --project ios",
+    "doctor": "taqwright doctor",
+    "devices": "taqwright devices",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "taqwright": "npm:@taqwright/taqwright@^0.1.0-beta.2",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

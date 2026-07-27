@@ -1,0 +1,27 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Logs (e.g. per-device Appium server logs: appium-5554.log)
+*.log
+
+# Downloaded app binaries
+*.apk
+*.app
+*.ipa
+*.app.zip
+# …except the demo-app binaries committed under app/ (self-contained project)
+!app/DemoApp-v1.0.0.apk
+!app/DemoApp-v1.1.0-debug-ios.app.zip
+
+# Generated test reports / artifacts
+test-results/
+taqwright-report/
+report.html
+fail-*.png
+
+# Secrets / local env (keep .env.example, ignore real .env)
+.env
+
+# OS / editor
+.DS_Store
