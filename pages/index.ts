@@ -16,10 +16,21 @@ import type { CartPage } from './cart/CartPage';
 import { AndroidCartPage } from './cart/AndroidCartPage';
 import { IosCartPage } from './cart/IosCartPage';
 
+// New pages added for this flow
+import type { SideMenuPage } from './side-menu/SideMenuPage';
+import { AndroidSideMenuPage } from './side-menu/AndroidSideMenuPage';
+import { IosSideMenuPage } from './side-menu/IosSideMenuPage';
+
+import type { GesturesPage } from './gestures/GesturesPage';
+import { AndroidGesturesPage } from './gestures/AndroidGesturesPage';
+import { IosGesturesPage } from './gestures/IosGesturesPage';
+
 export type { LoginPage } from './login/LoginPage';
 export type { HomePage } from './home/HomePage';
 export type { SearchCataloguePage } from './search-catalogue/SearchCataloguePage';
 export type { CartPage } from './cart/CartPage';
+export type { SideMenuPage } from './side-menu/SideMenuPage';
+export type { GesturesPage } from './gestures/GesturesPage';
 
 // One factory per screen: pick the platform's subclass from the running project's name
 // ('android' | 'ios'). Specs only ever touch the abstract page types — the flow methods chain from
@@ -46,4 +57,17 @@ export function cartPage(mobile: Mobile, projectName: string): CartPage {
   return projectName === 'ios'
     ? new IosCartPage(mobile, projectName)
     : new AndroidCartPage(mobile, projectName);
+}
+
+// Factories for the new pages introduced for this flow
+export function sideMenuPage(mobile: Mobile, projectName: string): SideMenuPage {
+  return projectName === 'ios'
+    ? new IosSideMenuPage(mobile, projectName)
+    : new AndroidSideMenuPage(mobile, projectName);
+}
+
+export function gesturesPage(mobile: Mobile, projectName: string): GesturesPage {
+  return projectName === 'ios'
+    ? new IosGesturesPage(mobile, projectName)
+    : new AndroidGesturesPage(mobile, projectName);
 }

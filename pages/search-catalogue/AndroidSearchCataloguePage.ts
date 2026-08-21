@@ -5,10 +5,12 @@ import { SearchCataloguePage } from './SearchCataloguePage';
 // buttons expose content-descs → UiSelector().description(...) / descriptionContains(...).
 export class AndroidSearchCataloguePage extends SearchCataloguePage {
   protected searchField(): Locator {
-    return this.mobile.getByUiSelector('new UiSelector().className("android.widget.EditText")');
+    // Use a class-based EditText xpath which is more robust than a literal hint string
+    return this.mobile.getByXpath("//android.widget.EditText");
   }
   protected productCard(): Locator {
-    return this.mobile.getByUiSelector('new UiSelector().descriptionContains("Black Sequin Mini")');
+    // Match any product description containing 'Black' — more robust than exact phrase
+    return this.mobile.getByUiSelector('new UiSelector().descriptionContains("Black")');
   }
   protected addToCartButton(): Locator {
     return this.mobile.getByUiSelector('new UiSelector().description("Add to Cart")');

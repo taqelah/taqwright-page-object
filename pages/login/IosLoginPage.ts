@@ -13,4 +13,9 @@ export class IosLoginPage extends LoginPage {
   protected loginButton(): Locator {
     return this.mobile.getById('Login');
   }
+  // The rejection banner's accessibility id really does contain a newline and the demo-credentials
+  // hint — recorded from the live screen, keep it verbatim.
+  invalidCredentialsError(): Locator {
+    return this.mobile.getById('Invalid username or password.\nHint: emma@demoapp.com / 10203040');
+  }
 }
