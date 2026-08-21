@@ -7,4 +7,8 @@ export class AndroidHomePage extends HomePage {
   protected viewAllButton(): Locator {
     return this.mobile.getByUiSelector('new UiSelector().description("View All")');
   }
+
+  protected openNavigationMenuButton(): Locator {
+    return this.mobile.getByUiSelector('new UiSelector().description("Open navigation menu")');
+  }
 }

@@ -29,3 +29,5 @@ fail-*.png
 
 # OS / editor
 .DS_Store
+# Taqwright LIME export scaffolding
+.lime/

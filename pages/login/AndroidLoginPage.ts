@@ -13,4 +13,11 @@ export class AndroidLoginPage extends LoginPage {
   protected loginButton(): Locator {
     return this.mobile.getByUiSelector('new UiSelector().description("Login")');
   }
+  // The rejection banner is a content-desc, not text, and carries a trailing hint line
+  // ("…password.\nHint: emma@demoapp.com / 10203040") → match on the stable prefix.
+  invalidCredentialsError(): Locator {
+    return this.mobile.getByUiSelector(
+      'new UiSelector().descriptionContains("Invalid username or password")',
+    );
+  }
 }
