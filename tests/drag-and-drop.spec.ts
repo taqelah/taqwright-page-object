@@ -1,18 +1,18 @@
 import { test } from 'taqwright';
 import { Eyes, Target } from '@applitools/eyes-images';
-import { loginPage } from '../pages';
+import { LoginPage } from '../pages';
 
 // DRAG & DROP gesture, recorded on Android. Sign in, open the side menu, go to the Gestures screen
 // and drag "Drag Item 1" onto "Drag Item 4", then confirm the reorder with an Applitools Eyes
 // visual checkpoint. The flow chains page objects (LoginPage → HomePage → SideMenuPage →
 // GesturesPage); the drag runs locator-to-locator, never on pixel coordinates.
-test('drag a gesture item onto another and verify the reorder', async ({ mobile }, testInfo) => {
+test('drag a gesture item onto another and verify the reorder', async ({ mobile }) => {
   const eyes = new Eyes();
   eyes.setApiKey(process.env.APPLITOOLS_API_KEY || '');
   await eyes.open('taqelah/demo-app', 'drag and drop reorder');
 
   try {
-    const home = await loginPage(mobile, testInfo.project.name).login('emma@demoapp.com', '10203040');
+    const home = await new LoginPage(mobile).login('emma@demoapp.com', '10203040');
     const side = await home.openNavigationMenu();
     const gestures = await side.openGestures();
 

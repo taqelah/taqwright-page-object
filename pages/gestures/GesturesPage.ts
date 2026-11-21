@@ -1,32 +1,36 @@
-import { type Mobile, type Locator } from 'taqwright';
+import { Screen, AndroidFindBy, type Locator } from 'taqwright';
 
-// Gestures screen: provides methods to perform swipes on recorded cards.
-export abstract class GesturesPage {
-  constructor(
-    protected readonly mobile: Mobile,
-    protected readonly projectName: string,
-  ) {}
+// Gestures screen: swipes on the demo cards and a locator-to-locator drag.
+//
+// Recorded on Android only (accessibility id → UiSelector().description(...), verbatim). No iOS
+// locators yet — record the flow on iOS and add @iOSFindBy; until then, using them on iOS throws a
+// clear "GesturesPage.<field> has no iOS locator".
+export class GesturesPage extends Screen {
+  // ── locators ──
+  @AndroidFindBy({ uiAutomator: 'new UiSelector().description("Swipe Card 1")' })
+  protected accessor swipeCard1!: Locator;
 
-  // ── platform-specific locators — provided by AndroidGesturesPage / IosGesturesPage ──
-  protected abstract swipeCard1(): Locator;
-  protected abstract swipeCard2(): Locator;
+  @AndroidFindBy({ uiAutomator: 'new UiSelector().description("Swipe Card 2")' })
+  protected accessor swipeCard2!: Locator;
+
   // the dragged item and the drop target — the drag runs locator-to-locator between them
-  protected abstract dragItem1(): Locator;
-  protected abstract dragItem4(): Locator;
+  @AndroidFindBy({ uiAutomator: 'new UiSelector().descriptionContains("Drag Item 1")' })
+  protected accessor dragItem1!: Locator;
+
+  @AndroidFindBy({ uiAutomator: 'new UiSelector().descriptionContains("Drag Item 4")' })
+  protected accessor dragItem4!: Locator;
 
   // ── shared flow — same on both platforms ──
   async swipeLeftOnCard1(): Promise<void> {
-    // Use the project's Locator interaction helper — recorded gesture: left
-    await this.swipeCard1().swipeLeft();
+    await this.swipeCard1.swipeLeft();
   }
 
   async swipeRightOnCard2(): Promise<void> {
-    // Use the project's Locator interaction helper — recorded gesture: right
-    await this.swipeCard2().swipeRight();
+    await this.swipeCard2.swipeRight();
   }
 
   async dragItem1ToItem4(): Promise<void> {
     // Recorded gesture: drag and drop, locator to locator — never pixel coordinates
-    await this.dragItem1().dragTo(this.dragItem4());
+    await this.dragItem1.dragTo(this.dragItem4);
   }
 }

@@ -1,31 +1,29 @@
 # Page Object Lab — one spec, both platforms 🧩
 
 The **Page Object pattern** taken cross-platform. A user flow like add-to-cart is **identical** on
-Android and iOS — only the **locators** differ. So we put the flow in an **abstract base page** and
-the locators in **Android / iOS subclasses**. The result: **one spec** runs on both targets.
+Android and iOS — only the **locators** differ. So each screen is **one class**: the flow is written
+once, and every element carries an `@AndroidFindBy` and an `@iOSFindBy` (Appium-Java style). The
+running session's platform picks the locator. The result: **one spec** runs on both targets.
 
 Each **screen** is its own page object — `LoginPage`, `HomePage`, `SearchCataloguePage`, `CartPage`,
 `SideMenuPage`, `GesturesPage` — and every flow method returns the **next** page, so the spec reads
 as a fluent chain.
 
 This lab is **complete and runnable on Android**. The side-menu and gestures screens were recorded
-on Android only, so their iOS locators are throwing stubs — see [iOS coverage](#ios-coverage).
+on Android only, so they have no `@iOSFindBy` yet — see [iOS coverage](#ios-coverage).
 
 ```text
 taqelah-demo-app-page-object/
 ├── taqwright.config.ts                two projects (android + ios) sharing one testDir
 ├── app/                               committed demo-app binaries (APK + iOS sim .app.zip)
-├── pages/                             one subfolder per screen (base + Android/iOS locators)
-│   ├── login/                         LoginPage.ts → login() → HomePage
-│   │   ├── LoginPage.ts               abstract base — the FLOW + abstract locator getters
-│   │   ├── AndroidLoginPage.ts        extends base — xpath / UiSelector locators
-│   │   └── IosLoginPage.ts            extends base — getById (accessibility id) locators
+├── pages/                             one class per screen: decorated locators + the flow
+│   ├── login/LoginPage.ts             login() → HomePage
 │   ├── home/                          HomePage.ts → openCatalog() / openNavigationMenu()
 │   ├── search-catalogue/              SearchCataloguePage.ts → searchAndAddToCart() → CartPage
-│   ├── cart/                          CartPage.ts → exposes proceedToCheckout() (spec asserts)
+│   ├── cart/                          CartPage.ts → exposes proceedToCheckout (spec asserts)
 │   ├── side-menu/                     SideMenuPage.ts → openGestures() → GesturesPage
 │   ├── gestures/                      GesturesPage.ts → swipes + locator-to-locator drag
-│   └── index.ts                       factories: pick each subclass by project name
+│   └── index.ts                       re-exports every page class
 └── tests/                             every spec runs under BOTH projects
     ├── add-to-cart.spec.ts
     ├── search-catalogue.spec.ts
@@ -51,30 +49,28 @@ Six specs × two projects = 12 tests (`npx taqwright test --list`).
 ## The pattern
 
 ```ts
-// base: the flow, written once — and it returns the NEXT screen's page object
-abstract class LoginPage {
-  protected abstract loginButton(): Locator;   // ← subclasses fill these in
+// one class per screen: each locator declares both platforms, the flow is written once
+class LoginPage extends Screen {
+  @AndroidFindBy({ uiAutomator: 'new UiSelector().description("Login")' })
+  @iOSFindBy({ id: 'Login' })                       // iOS has accessibility ids
+  protected accessor loginButton!: Locator;
   // …
   async login(u, p): Promise<HomePage> {
-    await this.usernameField().fill(u); /* … */ await this.loginButton().click();
-    return homePage(this.mobile, this.projectName);   // ← hand off to the next screen
+    await this.usernameField.fill(u); /* … */ await this.loginButton.click();
+    return new HomePage(this.mobile);               // ← hand off to the next screen
   }
-}
-
-class AndroidLoginPage extends LoginPage {
-  protected loginButton() { return this.mobile.getByUiSelector('new UiSelector().description("Login")'); }
-}
-class IosLoginPage extends LoginPage {
-  protected loginButton() { return this.mobile.getById('Login'); }   // iOS has accessibility ids
 }
 ```
 
+Declare locators as `accessor name!: Locator`. A plain `name!: Locator` field fails to compile under
+Playwright 1.65+ with this repo's ES2022 target.
+
 ```ts
 // the spec never sees a raw locator or an `if (android)` — just the user flow, chained screen-to-screen:
-const home    = await loginPage(mobile, testInfo.project.name).login('emma@demoapp.com', '10203040');
+const home    = await new LoginPage(mobile).login('emma@demoapp.com', '10203040');
 const catalog = await home.openCatalog();
 const cart    = await catalog.searchAndAddToCart('black');
-await expect(cart.proceedToCheckout()).toBeVisible();   // page object exposes the locator; the spec asserts
+await expect(cart.proceedToCheckout).toBeVisible();   // page object exposes the locator; the spec asserts
 ```
 
 ## Run
@@ -104,17 +100,19 @@ the diff to the Applitools dashboard instead of throwing.
 ## iOS coverage
 
 The login, home, catalogue and cart screens are recorded on **both** platforms. The **side-menu**
-and **gestures** screens were recorded on Android only, so `IosSideMenuPage` and `IosGesturesPage`
-(and `IosHomePage.openNavigationMenuButton`) throw a descriptive *"record this flow on iOS"* error
-instead of guessing a selector. `npm run test:ios` therefore fails on `swipe-gestures` and
-`drag-and-drop` until those locators are captured with `npx taqwright inspect`.
+and **gestures** screens were recorded on Android only, so `SideMenuPage`, `GesturesPage` (and
+`HomePage.openNavigationMenuButton`) carry only an `@AndroidFindBy`. On iOS, using one throws
+*"HomePage.openNavigationMenuButton has no iOS locator — add @iOSFindBy(...)"* instead of guessing a
+selector. `npm run test:ios` therefore fails on `swipe-gestures` and `drag-and-drop` until those
+locators are captured with `npx taqwright inspect`.
 
-Guessing an iOS accessibility id you have not seen on a live screen is worse than a loud stub — the
-stub tells you exactly which getter is missing.
+Guessing an iOS accessibility id you have not seen on a live screen is worse than a loud error — the
+error tells you exactly which field is missing its `@iOSFindBy`.
 
 ## Why it's worth it
 
-- **No `if (platform)` branching** in tests — the subclass hides it.
+- **No `if (platform)` branching** anywhere — the decorators hide it.
+- **Both platforms' selectors side by side**, one class per screen instead of three files.
 - **One place to fix a locator** when a screen changes (the page object, not N specs).
 - **Android vs iOS locator contrast** is real here: Android fields have no id (→ `getByXpath`/
   `getByUiSelector`), iOS exposes accessibility ids (→ clean `getById`). Same flow, different locators.
@@ -124,8 +122,9 @@ stub tells you exactly which getter is missing.
 | Symptom | Fix |
 | --- | --- |
 | `Unable to find an active device` | Boot an emulator/simulator; `npx taqwright devices`. |
-| A locator isn't found | Re-inspect with `npx taqwright inspect` and update the subclass — never the base. |
-| `… not implemented — record this flow on iOS` | Expected: that screen has no iOS locators yet. See [iOS coverage](#ios-coverage). |
+| A locator isn't found | Re-inspect with `npx taqwright inspect` and update that field's decorator — never the flow. |
+| `XxxPage.field has no iOS locator` | Expected: that screen has no `@iOSFindBy` yet. See [iOS coverage](#ios-coverage). |
+| `Definitely assigned fields cannot be initialized here` | Declare the locator as `accessor name!: Locator`, not `name!: Locator`. |
 | `EBADENGINE` on install | node is older than 24. `node -v`, then `nvm use 24`. |
 | iOS won't run | macOS-only; needs an iPhone simulator + the committed `app/DemoApp-v1.1.0-debug-ios.app.zip`. |
 | APK not found | Ensure [`app/DemoApp-v1.0.0.apk`](app/) exists (committed). |
