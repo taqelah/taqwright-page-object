@@ -15,7 +15,7 @@ nvm use 24       # or any installed >= 24
 ```bash
 npm install
 npm run typecheck            # tsc --noEmit — must pass before every commit
-npx taqwright test --list    # cheap sanity check: 1 spec × 2 projects
+npx taqwright test --list    # cheap sanity check: every spec × 2 projects
 npm run test:android         # the spec on Android (emulator must be booted)
 npm run test:ios             # the same spec on iOS (macOS + simulator)
 npx taqwright test           # both projects
@@ -37,8 +37,8 @@ single spec run on both. When editing:
 - App ids differ and are easy to typo: Android `com.taqelah.demo_app` (snake_case),
   iOS `com.taqelah.demoApp` (camelCase).
 - Keep `resetBetweenTests: true` — the specs rely on it instead of `beforeEach` hooks.
-- Project names `'android'` / `'ios'` are load-bearing: `pages/index.ts` matches on the exact string
-  `'ios'`. Renaming a project silently routes every screen to the Android subclass.
+- Each project's `platform` (`Platform.ANDROID` / `Platform.IOS`) is what the page decorators read.
+  Project names are free to change.
 
 ## Code style
 

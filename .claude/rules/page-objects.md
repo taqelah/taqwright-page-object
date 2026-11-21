@@ -5,90 +5,78 @@ paths:
 
 # Page-object rules
 
-## The base class — flow + abstract locators
+## One class per screen — decorated locators + flow
 
-The flow is identical on both platforms, so it is written **once** here. See
-`pages/login/LoginPage.ts`:
+The flow is identical on both platforms, so it is written **once**; each element carries one
+decorator per platform and the running session picks. See `pages/login/LoginPage.ts`:
 
 ```ts
-export abstract class LoginPage {
-  constructor(
-    protected readonly mobile: Mobile,
-    protected readonly projectName: string,
-  ) {}
+import { Screen, AndroidFindBy, iOSFindBy, type Locator } from 'taqwright';
+import { HomePage } from '../home/HomePage';
 
-  // ── platform-specific locators — provided by AndroidLoginPage / IosLoginPage ──
-  protected abstract usernameField(): Locator;
-  protected abstract loginButton(): Locator;
+export class LoginPage extends Screen {
+  // ── locators — one decorator per platform ──
+  @AndroidFindBy({ xpath: "//*[@hint='Username']" })
+  @iOSFindBy({ id: 'Username' })
+  protected accessor usernameField!: Locator;
+
+  @AndroidFindBy({ uiAutomator: 'new UiSelector().description("Login")' })
+  @iOSFindBy({ id: 'Login' })
+  protected accessor loginButton!: Locator;
 
   // ── shared flow — same on both platforms ──
   async login(username: string, password: string): Promise<HomePage> {
-    await this.usernameField().fill(username);
-    await this.loginButton().click();
-    return homePage(this.mobile, this.projectName);   // ← hand off to the next screen
+    await this.usernameField.fill(username);
+    await this.loginButton.click();
+    return new HomePage(this.mobile);   // ← hand off to the next screen
   }
 }
 ```
 
 Keep the two `// ── … ──` section banners — they make the split obvious at a glance.
 
+- Always `accessor name!: Locator` — never a plain `name!: Locator` field (it fails to compile under
+  Playwright 1.65+ with this repo's ES2022 target), never `declare` (it strips the decorator).
+- Order the decorators `@AndroidFindBy` then `@iOSFindBy`. Either order works; consistency helps.
+- `@FindBy({...})` covers both platforms when the app exposes the same id on each. A platform
+  decorator on the same field overrides it.
+
 ## Fluent navigation
 
-A flow method that leaves the screen **returns the next page object**, built from its factory with
-`this.mobile, this.projectName`. That is why the constructor carries `projectName` even though the
-base never branches on it.
-
+A flow method that leaves the screen **returns the next page object**: `new NextPage(this.mobile)`.
 The chain today: `LoginPage.login()` → `HomePage.openCatalog()` →
-`SearchCataloguePage.searchAndAddToCart()` → `CartPage` (terminal).
+`SearchCataloguePage.searchAndAddToCart()` → `CartPage` (terminal); `HomePage.openNavigationMenu()`
+→ `SideMenuPage.openGestures()` → `GesturesPage`.
 
-## Circular imports
+Import the next page **as a value** (`import { HomePage } from '../home/HomePage'`). The navigation
+graph has no cycles; if one ever appears, it still resolves, because the class is only touched inside
+a method.
 
-A base page imports the *next* page's **type** and its **factory**. Import the type with
-`import type` and the factory as a value — this is what keeps the `pages/index.ts` ↔ base-page cycle
-resolvable:
+## Screens recorded on one platform only
 
-```ts
-import type { HomePage } from '../home/HomePage';   // type-only — erased at compile time
-import { homePage } from '../index';                // value — the factory
-```
-
-Never `import { HomePage } from '../home/HomePage'` as a value in a base page.
+Give the field only the decorator you recorded (e.g. `@AndroidFindBy` alone). Using it on the other
+platform throws `XxxPage.field has no iOS locator — add @iOSFindBy(...)`, which says exactly what to
+record. Never guess a selector for a platform you haven't inspected.
 
 ## Exposing elements for assertions
 
 Page objects contain **no assertions** — no `expect`, no `toBeVisible`. When a spec must assert on an
-element, declare that one getter **public** (no `protected`) and let the spec assert. `CartPage` is
-the reference:
+element, drop `protected` from that field and let the spec assert. `CartPage` is the reference:
 
 ```ts
-export abstract class CartPage {
-  // public — the spec asserts on it
-  abstract proceedToCheckout(): Locator;
+export class CartPage extends Screen {
+  // ── locators — public, the spec asserts on it ──
+  @AndroidFindBy({ uiAutomator: 'new UiSelector().description("Proceed to Checkout")' })
+  @iOSFindBy({ id: 'Proceed to Checkout' })
+  accessor proceedToCheckout!: Locator;
 }
 ```
-
-## Factories (`pages/index.ts`)
-
-One factory per screen, all the same shape — Android is the default branch:
-
-```ts
-export function homePage(mobile: Mobile, projectName: string): HomePage {
-  return projectName === 'ios'
-    ? new IosHomePage(mobile, projectName)
-    : new AndroidHomePage(mobile, projectName);
-}
-```
-
-The return type is the **abstract** type, never the subclass. Also add the matching
-`export type { HomePage } from './home/HomePage';` line so specs can name the type.
 
 ## Checklist
 
-- [ ] Base is `abstract`; every locator is a `protected abstract …(): Locator` getter.
-- [ ] Base contains **no** selector strings and **no** platform branching.
-- [ ] Subclass implements locator getters **only** — no flow methods, no extra state.
-- [ ] Flow method that changes screen returns `Promise<NextPage>` built from the factory.
-- [ ] Next-page **type** imported with `import type`; factory imported as a value from `../index`.
+- [ ] Class `extends Screen`; every locator is a decorated `accessor name!: Locator`.
+- [ ] Selector strings appear **only** inside decorators; **no** platform branching.
+- [ ] Flow method that changes screen returns `Promise<NextPage>` via `new NextPage(this.mobile)`.
 - [ ] No `expect` / assertions anywhere under `pages/`.
-- [ ] New screen wired into `pages/index.ts` (factory + `export type`).
+- [ ] New screen re-exported from `pages/index.ts`.
 - [ ] `npm run typecheck` passes.
